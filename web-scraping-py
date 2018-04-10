@@ -1,0 +1,89 @@
+import urllib.request as urllib2
+import datetime
+import csv
+import time
+import re
+
+def download(url, user_agent='wswp', num_retries=2):
+    print ('Downloading:', url)
+    headers = {'User-agent': user_agent}
+    request = urllib2.Request(url, headers=headers)
+    try:
+        html = urllib2.urlopen(request).read()
+    except urllib2.URLError as e:
+        print ('Download error:', e.reason)
+        html = None
+        if num_retries > 0:
+            if hasattr(e, 'code') and 500 <= e.code < 600:
+                return download(url, user_agent, num_retries-1)
+    return html
+
+from bs4 import BeautifulSoup
+url = 'http://www.csap.cat/ciutadania/temps-espera.html'
+filaNova=[]
+llistaVariables=['dataActualitzacioWeb', 'dataCaptura','horaCaptura', 'PacientsNivell1', 'PacientsNivell2', 'PacientsNivell3', 'PacientsNivell4','tempsEsperaAdults','tempsEsperaPediatrics']
+L=locals()
+
+with open('/Users/alavado/Desktop/CSAP.csv', 'w', newline='') as csvFile:
+    writer = csv.writer(csvFile)
+    writer.writerow(llistaVariables)
+
+dataHora_inici = input('Indiqueu una data i hora per iniciar el procés d\'extracció en format DD-MM-AAAA-HH-MM, si voleu començar ara escriviu ARA: ')
+
+if dataHora_inici=="ARA":
+    dataHora_inici=datetime.datetime.now()
+    day=dataHora_inici.day
+    month=dataHora_inici.month
+    year=dataHora_inici.year
+    hour=dataHora_inici.hour
+    minute=dataHora_inici.minute
+else:
+    day, month, year, hour, minute = map(int, dataHora_inici.split('-'))
+
+data1 = datetime.datetime(year, month, day, hour,minute)
+dataHora_fi = input('Indiqueu una data i hora per finalitzar el procés en format DD-MM-AAAA-HH-MM: ')
+day, month, year, hour, minute = map(int, dataHora_fi.split('-'))
+data2=datetime.datetime(year, month, day, hour, minute)
+print(data1)
+print(data2)
+frequenciaSegons=int(input('Amb quina frequencia voleu realitzar la captura? (informeu en minuts) : '))*60
+print(frequenciaSegons)
+
+while data1>datetime.datetime.now():
+    time.sleep(60)
+while data1<=datetime.datetime.now() and data2>=datetime.datetime.now() :
+    print(f"S'està realitzant una captura cada {frequenciaSegons}.")
+    html = download(url)
+    soup = BeautifulSoup(html,"html5lib")
+
+    ul =soup.find(attrs={'class':'caixes temps clearfix'})
+    li = ul.find(attrs={'class':'caixa caixa-1'})
+    span = li.find(attrs={'class':'caixa-data'})
+    tempsEsperaAdults=span.text
+    li = ul.find(attrs={'class':'caixa caixa-2'})
+    span = li.find(attrs={'class':'caixa-data'})
+    tempsEsperaPediatrics=span.text
+
+    ol =soup.find(attrs={'class':'caixes num-pacients clearfix'})
+
+    for i in range(1,5):
+        li = ol.find(attrs={'class':'caixa caixa-%d'%i})
+        span = li.find(attrs={'class':'caixa-data'})
+        L["PacientsNivell%d"%i] = re.sub(" pacients", "", span.text)
+    p=soup.find(attrs={'class':'avis'})
+    darreraActualitzacio=p.find(attrs={'id':'esperaData'})
+    dataActualitzacioWeb=darreraActualitzacio.text
+    dataCaptura=datetime.datetime.now().date()
+    horaCaptura=str(datetime.datetime.now().hour)+":"+str(datetime.datetime.now().minute)
+
+
+    filaNova=[dataActualitzacioWeb, dataCaptura, horaCaptura, PacientsNivell1, PacientsNivell2, PacientsNivell3, PacientsNivell4,tempsEsperaAdults,tempsEsperaPediatrics]
+
+    with open('/Users/alavado/Desktop/CSAP.csv', 'a', newline='') as csvFile:
+        writer = csv.writer(csvFile)
+        writer.writerow(filaNova)
+
+    time.sleep(frequenciaSegons)
+
+del writer
+csvFile.close()

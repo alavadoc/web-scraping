@@ -3,9 +3,16 @@ import datetime
 import csv
 import time
 import re
+import os
+from bs4 import BeautifulSoup
 
+#Controlem el path de l'arxiu en base al directori actiu on es trobi l'arxiu py
+directoriActiu = os.path.dirname(__file__)
+nomArxiuCSV = "CSAP.csv"
+pathArxiu = os.path.join(directoriActiu, nomArxiuCSV)
+
+#Definim una funció que estableixi els paràmetres de connexió amb la web i controli els reintents i els possibles errors de connexió
 def download(url, user_agent='wswp', num_retries=2):
-    print ('Downloading:', url)
     headers = {'User-agent': user_agent}
     request = urllib2.Request(url, headers=headers)
     try:
@@ -18,12 +25,13 @@ def download(url, user_agent='wswp', num_retries=2):
                 return download(url, user_agent, num_retries-1)
     return html
 
-from bs4 import BeautifulSoup
+#Declarem la url de la web i la llista de variables que extreurem
 url = 'http://www.csap.cat/ciutadania/temps-espera.html'
 filaNova=[]
 llistaVariables=['dataActualitzacioWeb', 'dataCaptura','horaCaptura', 'PacientsNivell1', 'PacientsNivell2', 'PacientsNivell3', 'PacientsNivell4','tempsEsperaAdults','tempsEsperaPediatrics']
 L=locals()
 
+#Realitzem una primera connexió amb l'arxiu per crear-lo si no existeix i incorporar els noms de les variables
 with open('/Users/alavado/Desktop/CSAP.csv', 'w', newline='') as csvFile:
     writer = csv.writer(csvFile)
     writer.writerow(llistaVariables)

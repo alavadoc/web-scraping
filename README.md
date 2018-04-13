@@ -26,3 +26,5 @@ Les variables que extreu són les següents:
 - Temps informat d'espera per a pacients pediàtrics.
 
 El programa permet escollir el període de captura de dades entre una data-hora d'inici i una data-hora de fi de procés, i permet també escollir la freqüència de captura en minuts.
+
+L'arxiu *CSAP.csv* aporta un dataset d'exemple amb les extraccions realitzades de les variables durant un període de poc més de 24 hores, amb una freqüència de cada 5 minuts.

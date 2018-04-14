@@ -6,12 +6,13 @@ import re
 import os
 from bs4 import BeautifulSoup
 
-#Controlem el path de l'arxiu en base al directori actiu on es trobi l'arxiu py
+#Controlem el path de l arxiu en base al directori actiu on es trobi l arxiu py
 directoriActiu = os.path.dirname(__file__)
 nomArxiuCSV = "CSAP.csv"
 pathArxiu = os.path.join(directoriActiu, nomArxiuCSV)
 
-#Definim una funció que estableixi els paràmetres de connexió amb la web i controli els reintents i els possibles errors de connexió
+#Definim una funcio que estableixi els parametres de connexio amb la web i controli els reintents i els possibles errors de connexio
+
 def download(url, user_agent='wswp', num_retries=2):
     headers = {'User-agent': user_agent}
     request = urllib2.Request(url, headers=headers)
@@ -26,15 +27,19 @@ def download(url, user_agent='wswp', num_retries=2):
     return html
 
 #Declarem la url de la web i la llista de variables que extreurem
+
 url = 'http://www.csap.cat/ciutadania/temps-espera.html'
 filaNova=[]
 llistaVariables=['dataActualitzacioWeb', 'dataCaptura','horaCaptura', 'PacientsNivell1', 'PacientsNivell2', 'PacientsNivell3', 'PacientsNivell4','tempsEsperaAdults','tempsEsperaPediatrics']
 L=locals()
 
-#Realitzem una primera connexió amb l'arxiu per crear-lo si no existeix i incorporar els noms de les variables
-with open('/Users/alavado/Desktop/CSAP.csv', 'w', newline='') as csvFile:
+#Realitzem una primera connexio amb l arxiu per crear-lo si no existeix i incorporar els noms de les variables
+
+with open(pathArxiu, 'w', newline='') as csvFile:
     writer = csv.writer(csvFile)
     writer.writerow(llistaVariables)
+
+#Utilitzem el metode input() per obtenir els parametres d inici i finalitzacio del proces, així com la frequencia de captura 
 
 dataHora_inici = input('Indiqueu una data i hora per iniciar el procés d\'extracció en format DD-MM-AAAA-HH-MM, si voleu començar ara escriviu ARA: ')
 
@@ -52,15 +57,18 @@ data1 = datetime.datetime(year, month, day, hour,minute)
 dataHora_fi = input('Indiqueu una data i hora per finalitzar el procés en format DD-MM-AAAA-HH-MM: ')
 day, month, year, hour, minute = map(int, dataHora_fi.split('-'))
 data2=datetime.datetime(year, month, day, hour, minute)
-print(data1)
-print(data2)
+
 frequenciaSegons=int(input('Amb quina frequencia voleu realitzar la captura? (informeu en minuts) : '))*60
-print(frequenciaSegons)
+
+print(f"Es realitzarà l'extracció des del {datetime.datetime.strftime(data1, '%d/%m/%Y a les %H:%M')} hores fins al {datetime.datetime.strftime(data2, '%d/%m/%Y a les %H:%M')} hores, cada {int(frequenciaSegons/60)} minuts.")
+
+# Comprovem cada minut si el proces ha de continuar en base a les dates informades
 
 while data1>datetime.datetime.now():
     time.sleep(60)
 while data1<=datetime.datetime.now() and data2>=datetime.datetime.now() :
-    print(f"S'està realitzant una captura cada {frequenciaSegons}.")
+    #Iniciem el proces de scraping
+    
     html = download(url)
     soup = BeautifulSoup(html,"html5lib")
 
@@ -86,11 +94,14 @@ while data1<=datetime.datetime.now() and data2>=datetime.datetime.now() :
 
 
     filaNova=[dataActualitzacioWeb, dataCaptura, horaCaptura, PacientsNivell1, PacientsNivell2, PacientsNivell3, PacientsNivell4,tempsEsperaAdults,tempsEsperaPediatrics]
+    
+    #Afegim una nova fila a l arxiu amb les noves dades capturades
 
-    with open('/Users/alavado/Desktop/CSAP.csv', 'a', newline='') as csvFile:
+    with open(pathArxiu, 'a', newline='') as csvFile:
         writer = csv.writer(csvFile)
         writer.writerow(filaNova)
 
+    #Retenim la nova captura durant el temps de frequencia informat
     time.sleep(frequenciaSegons)
 
 del writer

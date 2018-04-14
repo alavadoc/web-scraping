@@ -13,7 +13,8 @@ pathArxiu = os.path.join(directoriActiu, nomArxiuCSV)
 
 #Definim una funcio que estableixi els parametres de connexio amb la web i controli els reintents i els possibles errors de connexio
 
-def download(url, user_agent='wswp', num_retries=2):
+def download(url, frequenciaSegons, user_agent='wswp', num_retries=2):
+    print ('Downloading from', url, 'every', int(frequenciaSegons/60) , 'minutes.' )
     headers = {'User-agent': user_agent}
     request = urllib2.Request(url, headers=headers)
     try:
@@ -69,7 +70,7 @@ while data1>datetime.datetime.now():
 while data1<=datetime.datetime.now() and data2>=datetime.datetime.now() :
     #Iniciem el proces de scraping
     
-    html = download(url)
+    html = download(url, frequenciaSegons)
     soup = BeautifulSoup(html,"html5lib")
 
     ul =soup.find(attrs={'class':'caixes temps clearfix'})
